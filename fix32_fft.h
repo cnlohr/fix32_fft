@@ -24,6 +24,8 @@
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   IN THE SOFTWARE.
 
+  You may alternatively license this code under the terms of the New BSD
+  license.
 
   This comes from the fix_fft.c lineage, but is basically a rewrite.  You can
   see a copy of the original here: https://gist.github.com/Tomwi/3842231 
@@ -83,26 +85,8 @@ Options:
      more effectively use the 
 
    * Original code used "precise" rounding to dither in the loss of the 
-     lsb on multiplies. You can turn this off
-
-  They also note:
-     fix_fftr() - forward/inverse FFT on array of real numbers.
-     Real FFT/iFFT using half-size complex FFT by distributing
-     even/odd samples into real/imaginary arrays respectively.
-     In order to save data space (i.e. to avoid two arrays, one
-     for real, one for imaginary samples), we proceed in the
-     following two steps: a) samples are rearranged in the real
-     array so that all even samples are in places 0-(N/2-1) and
-     all imaginary samples in places (N/2)-(N-1), and b) fix_fft
-     is called with fr and fi pointing to index 0 and index N/2
-     respectively in the original array. The above guarantees
-     that fix_fft "sees" consecutive real samples as alternating
-     real and imaginary samples in the complex array.
-
-     fix_fft() - perform forward/inverse fast Fourier transform.
-     fr[n],fi[n] are real and imaginary arrays, both INPUT AND
-     RESULT (in-place FFT), with 0 <= n < 2**m; set inverse to
-     0 for forward transform (FFT), or 1 for iFFT.
+     lsb on multiplies. You can turn this off by defining
+	 FIX32_FFT_PRECISEROUNDING 0
 */
 
 #ifndef FIX32_FFT_H
@@ -110,10 +94,31 @@ Options:
 
 #include <stdint.h>
 
+/* Original note:
+	fix_fftr() - forward/inverse FFT on array of real numbers. Real FFT/iFFT
+	using half-size complex FFT by distributing even/odd samples into
+	real/imaginary arrays respectively.  In order to save data space (i.e. to
+	avoid two arrays, one for real, one for imaginary samples), we proceed in
+	the following two steps: a) samples are rearranged in the real array so
+	that all even samples are in places 0-(N/2-1) and all imaginary samples in
+	places (N/2)-(N-1), and b) fix_fft is called with fr and fi pointing to
+	index 0 and index N/2 respectively in the original array. The above
+	guarantees that fix_fft "sees" consecutive real samples as alternating
+	real and imaginary samples in the complex array.
+*/
 int fix32_fftr( int32_t fr[], int m, int inverse );
 
+/* Original Note:
+	fix_fft() - perform forward/inverse fast Fourier transform.  fr[n],fi[n]
+	are real and imaginary arrays, both INPUT AND RESULT (in-place FFT), with
+	0 <= n < 2**m; set inverse to 0 for forward transform (FFT), or 1 for iFFT.
+*/
 int fix32_fft( int32_t fr[], int32_t fi[], int m, int inverse );
 
+/* Shift array
+	Take all elements in fr and/or fi (if not-null) and shift the bits up- or
+    down- by shift steps.  This can help keep the arrays in bounds.
+*/
 void fix32_shift( int32_t * fr, int32_t * fi, int m, int shift );
 
 #ifdef FIX32_FFT_IMPLEMENTATION
@@ -396,23 +401,15 @@ int fix32_fftr( int32_t f[], int m, int inverse )
 	m--;
 
 	int ret = 0;
-	uint32_t N = 1<<(m);
+	uint32_t N = 1<<(m); // m-1 (see m-- above)
 	int32_t *fr = f, *fi = &f[N];
 
-	for( int t = 0; t < 2; t++ )
-	{
-		if( inverse == t )
-		{
-			for( int i = 1; i < N; i += 2 )
-			{
-				FIX32FFT_SWAP( f[N+i-1], f[i] );
-			}
-		}
-		else
-		{
-			ret = fix32_fft( fi, fr, m /* m-1 */, inverse );
-		}
-	}
+	if( inverse )
+		ret = fix32_fft( fi, fr, m /* m-1 */, inverse );
+	for( int i = 1; i < N; i += 2 )
+		FIX32FFT_SWAP( f[N+i-1], f[i] );
+	if( !inverse )
+		ret = fix32_fft( fi, fr, m /* m-1 */, inverse );
 
 	return ret;
 }
