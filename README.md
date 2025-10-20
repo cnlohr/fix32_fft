@@ -86,5 +86,5 @@ The notable changes between versions are outlined below.
 
 If you are in a situation where you would like to license the code under the New BSD license, you may.  Both authors approve it use.
 
-The original authors, Tom Roberts and Malcolm Slaney could not be reached for license concerns but it has departed 
+The original authors, Tom Roberts and Malcolm Slaney could not be reached for license concerns but it has departed significantly.
 
