@@ -395,6 +395,26 @@ int fix32_fft( int32_t fr[], int32_t fi[], int M, int inverse )
 	return 0;
 }
 
+/* Non-obvious mechanism for real FFT by Dmitri Bouras.
+
+  If X[] is the result array after a call to fix_fft(), then X[] is only half
+  the spectrum (in Xr and Xi bins). To get the full spectrum (in Gr and Gi
+  bins) you need to use the following equations:
+
+    Gr(N/2) = Xr(0) – Xi(0)
+    Gi(N/2) = 0
+    Gr(N–k) = Gr(k), for k = 1, 2, ..., N/2–1
+    Gi(N–k) = –Gi(k)
+
+  After generating G[], you can perform filtering etc. as usual, and when done
+  you "fold back" into X[] again before performing inverse fix_fft(). There
+  used to be an excellent reference here:
+
+  http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input
+
+
+  It has been removed, but it has been privately archived if need be.
+*/
 
 int fix32_fftr( int32_t f[], int m, int inverse )
 {
