@@ -80,6 +80,20 @@ The notable changes between versions are outlined below.
  * Original code used "precise" rounding to dither in the loss of the 
    lsb on multiplies. You can turn this off
 
+## Real-only FFT implementation.
+
+Dimitri Bouras noted that the technique used for the real only FFT implementation was originally discussed in a TI app note [here](
+   http://processors.wiki.ti.com/index.php/Efficient_FFT_Computation_of_Real_Input) which is now a dead site, but has been more recently discussed in a newer app note [here](
+https://www.ti.com/lit/an/spra291/spra291.pdf).  Their main takeaway was:
+
+> If X[] is the result array after a call to fix_fft(), then X[] is only half the spectrum (in Xr and Xi bins). To get the full spectrum (in Gr and Gi bins) you need to use the following equations:
+> 
+> Gr(N/2) = Xr(0) – Xi(0)
+> Gi(N/2) = 0
+> Gr(N–k) = Gr(k), for k = 1, 2, ..., N/2–1
+> Gi(N–k) = –Gi(k)
+> 
+> After generating G[], you can perform filtering etc. as usual, and when done you "fold back" into X[] again before performing inverse fix_fft(). 
 
 
 ## License note
